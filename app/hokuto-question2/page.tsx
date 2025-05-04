@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
 export default function Question2() {
-  const searchParams = useSearchParams({ suspense: false })
+  const searchParams: URLSearchParams = useSearchParams()
   const userId = searchParams.get('user') || ''
   const machineName = searchParams.get('color') || ''
   const [answer, setAnswer] = useState('')
