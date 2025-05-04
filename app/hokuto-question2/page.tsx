@@ -1,17 +1,23 @@
 'use client'
-import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+
+import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
 export default function Question2() {
-  const searchParams: URLSearchParams = useSearchParams()
-  const userId = searchParams.get('user') || ''
-  const machineName = searchParams.get('color') || ''
+  const [userId, setUserId] = useState('')
+  const [machineName, setMachineName] = useState('')
   const [answer, setAnswer] = useState('')
   const [result, setResult] = useState<number | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [totalExpected, setTotalExpected] = useState<number | null>(null)
   const [totalResult, setTotalResult] = useState<number | null>(null)
+
+  // ✅ クエリパラメータ取得（user, color）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setUserId(params.get('user') || '')
+    setMachineName(params.get('color') || '')
+  }, [])
 
   const expectedValues: { [g: string]: number } = {
     "0G": -1929, "10G": -1962, "20G": -1995, "30G": -2029, "40G": -2062,
@@ -40,8 +46,7 @@ export default function Question2() {
     "1150G": 10316, "1160G": 10648, "1170G": 10980, "1180G": 11312,
     "1190G": 11644, "1200G": 11976, "1210G": 12327, "1220G": 12678,
     "1230G": 13029, "1240G": 13380, "1250G": 13731, "1260G": 13731
-  }
-  
+  }  
 
   const expected = answer && expectedValues[answer] !== undefined
     ? expectedValues[answer]
@@ -84,10 +89,8 @@ export default function Question2() {
     }
 
     setHistory(data || [])
-
     const totalExp = (data || []).reduce((sum, item) => sum + (item.expected_value ?? 0), 0)
     const totalRes = (data || []).reduce((sum, item) => sum + (item.result ?? 0), 0)
-
     setTotalExpected(totalExp)
     setTotalResult(totalRes)
   }
@@ -98,7 +101,6 @@ export default function Question2() {
     <div className="px-4 py-8 text-white max-w-md mx-auto text-sm">
       <h2 className="text-lg font-semibold mb-4">質問2</h2>
 
-      {/* 説明文（修正済み） */}
       <p className="mb-4 text-white leading-relaxed">
         開始G数を選択すると、想定期待値が表示されます。<br />
         そのまま実践する場合は「送信」ボタンを押してください。（実践記録として記録されます）<br />
