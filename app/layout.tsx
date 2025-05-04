@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Head from "next/head"; // ✅ Headをインポート
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -24,9 +25,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <Head>
+        {/* ✅ Plausible トラッキングスクリプト */}
+        <script
+          defer
+          data-domain="slot-record.vercel.app"
+          src="https://plausible.io/js/script.js"
+        ></script>
+      </Head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>
