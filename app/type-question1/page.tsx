@@ -1,12 +1,17 @@
 'use client'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function Question1() {
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const userId = searchParams.get('user') || ''
+  const [userId, setUserId] = useState('')
   const [answer, setAnswer] = useState('')
+
+  // ✅ クエリパラメータをURLから取得
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setUserId(params.get('user') || '')
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -15,9 +20,7 @@ export default function Question1() {
       return
     }
 
-    // 選んだ機種ごとに遷移先を分岐
     let route = '/default-question2'
-
     if (answer === '北斗の拳') route = '/hokuto-question2'
     else if (answer === 'からくりサーカス') route = '/karakuri-question2'
     else if (answer === '東京グール') route = '/ghoul-question2'
