@@ -1,7 +1,5 @@
 'use client'
 import { useSearchParams } from 'next/navigation'
-// 他のインポート…
-import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
