@@ -7,18 +7,55 @@ export default function Home() {
   const [userId, setUserId] = useState('trial2025')
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (userId.trim() === '') {
       alert('IDを入力してください')
       return
     }
-    router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
+
+    if (userId === 'trial2025') {
+      router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
+      return
+    }
+
+    // 課金済みか確認
+    const res = await fetch('/api/check-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+
+    const data = await res.json()
+
+    if (data.isActive) {
+      router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
+    } else {
+      // Stripe Checkout セッションを作成してリダイレクト
+      const checkoutRes = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+
+      if (!checkoutRes.ok) {
+        const errorText = await checkoutRes.text()
+        console.error('Checkout API error:', errorText)
+        alert('Checkout APIでエラーが発生しました')
+        return
+      }
+
+      const checkoutData = await checkoutRes.json()
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url
+      } else {
+        alert('Checkout URLが取得できませんでした')
+      }
+    }
   }
 
   return (
     <>
-      {/* ✅ SEO対策のmeta情報 */}
       <Head>
         <title>スロット期待値チェッカー｜収支・G数を記録しよう</title>
         <meta
@@ -53,7 +90,6 @@ export default function Home() {
           </button>
         </form>
 
-        {/* ✅ サイト説明欄（下部） */}
         <div className="mt-8 text-left bg-gray-800 p-4 rounded text-xs">
           <h2 className="text-white text-sm font-bold mb-2">このサイトについて</h2>
           <p>
@@ -65,7 +101,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* ✅ フッターリンク */}
         <footer className="mt-16 text-xs text-gray-400 text-center">
           <div className="space-x-4">
             <a href="/privacy" className="underline">プライバシーポリシー</a>
