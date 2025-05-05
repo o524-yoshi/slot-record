@@ -1,11 +1,10 @@
-// ✅ VercelのEdge RuntimeではなくNode.jsを使うために必須！
 export const runtime = 'nodejs'
 
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-04-30.basil', // Stripeダッシュボードと一致させてOK
+  apiVersion: '2025-04-30.basil',
 })
 
 export async function POST(req: NextRequest) {
@@ -20,48 +19,53 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.error('❌ Webhook signature verification failed:', err)
+    console.error('❌ Webhook verification failed:', err)
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
-  // ✅ supabase-js を動的 import（これで build 時に process.env を読まない！）
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const SUPABASE_URL = process.env.SUPABASE_URL!
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-  // ✅ 決済成功時
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
     const customerId = session.customer as string
 
     if (userId && customerId) {
-      await supabase.from('paid_users').upsert({
-        user_id: userId,
-        stripe_customer_id: customerId,
-        is_active: true,
-        subscribed_at: new Date().toISOString(),
+      await fetch(`${SUPABASE_URL}/rest/v1/paid_users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          stripe_customer_id: customerId,
+          is_active: true,
+          subscribed_at: new Date().toISOString(),
+        }),
       })
-      console.log(`✅ ユーザー ${userId} を有効にしました`)
+      console.log(`✅ ${userId} を有効ユーザーとして登録`)
     }
   }
 
-  // ✅ 解約時
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const customerId = subscription.customer as string
 
-    await supabase
-      .from('paid_users')
-      .update({
+    await fetch(`${SUPABASE_URL}/rest/v1/paid_users?stripe_customer_id=eq.${customerId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
         is_active: false,
         unsubscribed_at: new Date().toISOString(),
-      })
-      .eq('stripe_customer_id', customerId)
-
-    console.log(`⚠️ 顧客 ${customerId} のサブスクを無効化しました`)
+      }),
+    })
+    console.log(`⚠️ 顧客 ${customerId} を無効化しました`)
   }
 
   return new NextResponse('OK', { status: 200 })
