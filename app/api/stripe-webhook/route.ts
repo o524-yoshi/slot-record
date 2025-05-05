@@ -1,11 +1,8 @@
-// ✅ 必ずファイルの最上部に書くこと！
 export const runtime = 'nodejs'
 
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-// ✅ Stripe 初期化（APIバージョンはダッシュボードのバージョンに合わせてください）
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-04-30.basil',
 })
@@ -26,13 +23,13 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
-  // ✅ クライアントの初期化を POST 関数内に移動（ビルドエラー回避）
+  // ✅ supabase-js を動的に読み込む（build時に実行されなくなる！）
+  const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // ✅ 決済成功時（初回購入・再加入）
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const customerId = session.customer as string
@@ -49,7 +46,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ✅ 解約時
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const customerId = subscription.customer as string
