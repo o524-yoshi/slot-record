@@ -1,3 +1,5 @@
+// app/api/stripe-webhook/route.ts
+
 export const runtime = 'nodejs'
 
 import Stripe from 'stripe'
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.error('❌ Webhook verification failed:', err)
+    console.error('❌ Webhook signature verification failed:', err)
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
