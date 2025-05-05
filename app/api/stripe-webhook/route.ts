@@ -1,13 +1,11 @@
-// app/api/stripe-webhook/route.ts
-
-// ✅ Edge Runtime ではなく Node.js を明示（これが超重要！）
+// ✅ 必ずファイルの最上部に書くこと！
 export const runtime = 'nodejs'
 
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// ✅ Stripe 初期化（APIバージョンは Stripe ダッシュボードと一致させてください）
+// ✅ Stripe 初期化（APIバージョンはダッシュボードのバージョンに合わせてください）
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-04-30.basil',
 })
@@ -28,6 +26,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
+  // ✅ クライアントの初期化を POST 関数内に移動（ビルドエラー回避）
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
