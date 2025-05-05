@@ -1,10 +1,11 @@
+// ✅ VercelのEdge RuntimeではなくNode.jsを使うために必須！
 export const runtime = 'nodejs'
 
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-04-30.basil',
+  apiVersion: '2025-04-30.basil', // Stripeダッシュボードと一致させてOK
 })
 
 export async function POST(req: NextRequest) {
@@ -23,29 +24,31 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
-  // ✅ supabase-js を動的に読み込む（build時に実行されなくなる！）
+  // ✅ supabase-js を動的 import（これで build 時に process.env を読まない！）
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // ✅ 決済成功時
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const customerId = session.customer as string
     const userId = session.metadata?.userId
+    const customerId = session.customer as string
 
-    if (userId) {
+    if (userId && customerId) {
       await supabase.from('paid_users').upsert({
         user_id: userId,
         stripe_customer_id: customerId,
         is_active: true,
         subscribed_at: new Date().toISOString(),
       })
-      console.log(`✅ User ${userId} marked as active`)
+      console.log(`✅ ユーザー ${userId} を有効にしました`)
     }
   }
 
+  // ✅ 解約時
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const customerId = subscription.customer as string
@@ -58,7 +61,7 @@ export async function POST(req: NextRequest) {
       })
       .eq('stripe_customer_id', customerId)
 
-    console.log(`⚠️ User with customer_id ${customerId} marked as inactive`)
+    console.log(`⚠️ 顧客 ${customerId} のサブスクを無効化しました`)
   }
 
   return new NextResponse('OK', { status: 200 })
