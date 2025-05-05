@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   // ✅ Stripe SDK を動的 import（ビルド時に評価されない！）
   const { default: Stripe } = await import('stripe')
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2022-11-15',
+    apiVersion: '2025-04-30.basil',
   })
 
   let event
