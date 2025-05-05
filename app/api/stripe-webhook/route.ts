@@ -1,8 +1,13 @@
 // app/api/stripe-webhook/route.ts
+
+// ✅ Edge Runtime ではなく Node.js を明示（これが超重要！）
+export const runtime = 'nodejs'
+
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// ✅ Stripe 初期化（APIバージョンは Stripe ダッシュボードと一致させてください）
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-04-30.basil',
 })
@@ -19,7 +24,7 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+    console.error('❌ Webhook signature verification failed:', err)
     return new NextResponse('Invalid signature', { status: 400 })
   }
 
@@ -28,6 +33,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // ✅ 決済成功時（初回購入・再加入）
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const customerId = session.customer as string
@@ -40,9 +46,11 @@ export async function POST(req: NextRequest) {
         is_active: true,
         subscribed_at: new Date().toISOString(),
       })
+      console.log(`✅ User ${userId} marked as active`)
     }
   }
 
+  // ✅ 解約時
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
     const customerId = subscription.customer as string
@@ -54,6 +62,8 @@ export async function POST(req: NextRequest) {
         unsubscribed_at: new Date().toISOString(),
       })
       .eq('stripe_customer_id', customerId)
+
+    console.log(`⚠️ User with customer_id ${customerId} marked as inactive`)
   }
 
   return new NextResponse('OK', { status: 200 })
