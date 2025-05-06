@@ -121,7 +121,7 @@ export default function Question2() {
         </select>
 
         <div>
-          <label className="block mb-1">実践結果（円）：</label>
+          <label className="block mb-1">実践結果（pt）：</label>
           <input
             type="number"
             value={result ?? ''}
@@ -135,7 +135,7 @@ export default function Question2() {
 
         {expected !== null && (
           <p className="text-sm mt-2">
-            期待値：<strong>{expected.toLocaleString()}円</strong>
+            期待値：<strong>{expected.toLocaleString()}pt</strong>
           </p>
         )}
 
@@ -171,12 +171,12 @@ export default function Question2() {
                     <td className="border px-2 py-1">{item.question2game}</td>
                     <td className="border px-2 py-1">
                       {item.expected_value != null
-                        ? `${item.expected_value.toLocaleString()}円`
+                        ? `${item.expected_value.toLocaleString()}pt`
                         : '―'}
                     </td>
                     <td className="border px-2 py-1">
                       {item.result != null
-                        ? `${item.result.toLocaleString()}円`
+                        ? `${item.result.toLocaleString()}pt`
                         : '―'}
                     </td>
                   </tr>
@@ -186,8 +186,8 @@ export default function Question2() {
           </div>
 
           <p className="mt-4">
-            <strong>累計期待値：</strong>{totalExpected?.toLocaleString()}円<br />
-            <strong>累計実践結果：</strong>{totalResult?.toLocaleString()}円
+            <strong>累計期待値：</strong>{totalExpected?.toLocaleString()}pt<br />
+            <strong>累計実践結果：</strong>{totalResult?.toLocaleString()}pt
           </p>
         </div>
       )}

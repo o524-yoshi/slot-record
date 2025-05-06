@@ -7,51 +7,13 @@ export default function Home() {
   const [userId, setUserId] = useState('trial2025')
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     if (userId.trim() === '') {
       alert('IDを入力してください')
       return
     }
 
-    if (userId === 'trial2025') {
-      router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
-      return
-    }
-
-    // 課金済みか確認
-    const res = await fetch('/api/check-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    })
-
-    const data = await res.json()
-
-    if (data.isActive) {
-      router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
-    } else {
-      // Stripe Checkout セッションを作成してリダイレクト
-      const checkoutRes = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      })
-
-      if (!checkoutRes.ok) {
-        const errorText = await checkoutRes.text()
-        console.error('Checkout API error:', errorText)
-        alert('Checkout APIでエラーが発生しました')
-        return
-      }
-
-      const checkoutData = await checkoutRes.json()
-      if (checkoutData.url) {
-        window.location.href = checkoutData.url
-      } else {
-        alert('Checkout URLが取得できませんでした')
-      }
-    }
+    router.push(`/type-question1?user=${encodeURIComponent(userId)}`)
   }
 
   return (
@@ -74,7 +36,7 @@ export default function Home() {
 
         <p className="mb-4">任意のIDを入力してください（例：abc123）</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4">
           <input
             type="text"
             value={userId}
@@ -83,7 +45,8 @@ export default function Home() {
             className="w-full p-2 text-white bg-black rounded"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             className="w-full bg-white text-black px-4 py-2 rounded hover:bg-gray-200"
           >
             次へ
@@ -93,11 +56,11 @@ export default function Home() {
         <div className="mt-8 text-left bg-gray-800 p-4 rounded text-xs">
           <h2 className="text-white text-sm font-bold mb-2">このサイトについて</h2>
           <p>
-            本サイトは、スロット実践時の「開始G数」「期待値」「収支（実践結果）」を記録し、
+            スロット実践時の「開始G数」「期待値」「収支（実践結果）」を記録し、
             後から振り返ったり、累計データを把握するためのツールです。<br />
             スマホからサクッと入力・確認ができるので、ホール内でも手軽に使えます。対応機種は随時追加予定です。
             画面上表示される期待値結果は全て5.6枚交換を前提にしてます。<br />
-            有料プランを希望の方はユーザIDを自身で使用するIDへ変更のうえ利用ください。有料プランでは自分の収支記録のみが表示されます。
+            自分専用のIDで使用することで自分の収支記録のみ管理することも可能です。
           </p>
         </div>
 
