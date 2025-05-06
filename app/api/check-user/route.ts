@@ -1,32 +1,42 @@
-// app/api/check-user/route.ts
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'nodejs'
+console.log('✅ check-user API 起動')
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL)
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ 存在' : '❌ 未設定')
 
-import { NextRequest, NextResponse } from 'next/server'
+const supabase = createClient(
+  process.env.SUPABASE_URL ?? '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+)
 
-export async function POST(req: NextRequest) {
-  const { userId } = await req.json()
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const user = searchParams.get('user')
 
-  if (!userId) {
-    return NextResponse.json({ isActive: false, error: 'No userId provided' }, { status: 400 })
+  if (!user) {
+    return NextResponse.json({ error: 'user パラメータが必要です' }, { status: 400 })
   }
 
-  const SUPABASE_URL = process.env.SUPABASE_URL!
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  try {
+    console.log('🔍 user チェック開始:', user)
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/paid_users?user_id=eq.${userId}&select=is_active`,
-    {
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
+    const { data, error } = await supabase
+      .from('テスト')
+      .select('user_id')
+      .eq('user_id', user)
+
+    if (error) {
+      console.error('❌ Supabase DBエラー:', error)
+      return NextResponse.json({ error: 'DBエラー' }, { status: 500 })
     }
-  )
 
-  const data = await res.json()
+    const exists = Array.isArray(data) && data.length > 0
+    console.log('✅ user チェック結果:', exists ? '存在' : 'なし')
 
-  const isActive = Array.isArray(data) && data.length > 0 && data[0].is_active === true
-
-  return NextResponse.json({ isActive })
+    return NextResponse.json({ exists })
+  } catch (e) {
+    console.error('❌ check-user API例外:', e)
+    return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 })
+  }
 }

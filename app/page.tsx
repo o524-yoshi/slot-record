@@ -7,9 +7,25 @@ export default function Home() {
   const [userId, setUserId] = useState('trial2025')
   const router = useRouter()
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (userId.trim() === '') {
       alert('IDを入力してください')
+      return
+    }
+
+    // DBに登録されているか確認（GET）
+    const res = await fetch(`/api/check-user?user=${encodeURIComponent(userId)}`)
+
+    if (!res.ok) {
+      console.error('check-user API エラー:', res.status)
+      alert('ユーザー確認中にエラーが発生しました')
+      return
+    }
+
+    const data = await res.json()
+
+    if (!data.exists) {
+      alert('このIDは登録されていません')
       return
     }
 
@@ -60,7 +76,7 @@ export default function Home() {
             後から振り返ったり、累計データを把握するためのツールです。<br />
             スマホからサクッと入力・確認ができるので、ホール内でも手軽に使えます。対応機種は随時追加予定です。
             画面上表示される期待値結果は全て5.6枚交換を前提にしてます。<br />
-            自分専用のIDで使用することで自分の収支記録のみ管理することも可能です。
+            自分専用のIDを使用することで自分の収支記録のみ管理することも可能です。
           </p>
         </div>
 
